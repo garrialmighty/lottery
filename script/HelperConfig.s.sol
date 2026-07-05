@@ -2,14 +2,15 @@
 
 pragma solidity 0.8.19;
 
-import {console, Script} from "forge-std/Script.sol";
+import {Script} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {LinkToken} from "../test/mock/LinkToken.sol";
 
 abstract contract Constants {
     // Mock VRF Values
-    uint96 public constant MOCK_BASE_FEE = 0.25 ether;
-    uint96 public constant MOCK_GAS_PRICE = 1e9;
-    int256 public constant MOCK_WEI_PER_UNIT_LINK = 4e15;
+    uint96 public constant MOCK_BASE_FEE = 0.025 ether;
+    uint96 public constant MOCK_GAS_PRICE = 1e10;
+    int256 public constant MOCK_WEI_PER_UNIT_LINK = 4e17;
 
     uint256 public constant SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant ANVIL_CHAIN_ID = 31337;
@@ -27,6 +28,7 @@ contract HelperConfig is Script, Constants {
         uint256 subscriptionId;
         uint32 gasLimit;
         uint256 interval;
+        address link;
     }
 
     constructor() {
@@ -57,10 +59,10 @@ contract HelperConfig is Script, Constants {
         NetworkConfig memory sepoliaConfig = NetworkConfig({
             vrfCoordinator: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            // TODO: add actual subscription id
-            subscriptionId: 0,
+            subscriptionId: 21696582914931907414860541822315855792894493028648821595705788130624572580909,
             gasLimit: 500000,
-            interval: 86400 // 1 day (24 hours)
+            interval: 86400, // 1 day (24 hours),
+            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
         });
         return sepoliaConfig;
     }
@@ -76,6 +78,8 @@ contract HelperConfig is Script, Constants {
             MOCK_GAS_PRICE,
             MOCK_WEI_PER_UNIT_LINK
         );
+        uint256 subId = coordinator.createSubscription();
+        LinkToken mockLinkContract = new LinkToken();
         vm.stopBroadcast();
 
         activeNetworkConfig = NetworkConfig({
@@ -84,7 +88,8 @@ contract HelperConfig is Script, Constants {
             // TODO: add actual subscription id
             subscriptionId: 0,
             gasLimit: 500000,
-            interval: 20 // 20 seconds
+            interval: 20, // 20 seconds
+            link: address(mockLinkContract)
         });
         return activeNetworkConfig;
     }

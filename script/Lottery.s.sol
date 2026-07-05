@@ -5,13 +5,32 @@ pragma solidity 0.8.19;
 import {Script} from "forge-std/Script.sol";
 import {Lottery} from "../src/Lottery.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
+import {CreateSubscription, FundSubscription, AddConsumer} from "./Interactions.s.sol";
 
 contract LotteryDeploy is Script {
-    function run() external returns (Lottery) {
+    function run()
+        external
+        returns (Lottery, HelperConfig.NetworkConfig memory)
+    {
         // Declare outside broadcast so as not to spend gas and deploy to the chain.
         HelperConfig config = new HelperConfig();
         HelperConfig.NetworkConfig memory networkConfig = config.getConfig();
-
+        if (networkConfig.subscriptionId == 0) {
+            CreateSubscription subscriptionGenerator = new CreateSubscription();
+            // Syntactic sugar to auto-assign the return values to the object
+            (
+                networkConfig.subscriptionId,
+                networkConfig.vrfCoordinator
+            ) = subscriptionGenerator.createSubscription(
+                networkConfig.vrfCoordinator
+            );
+            FundSubscription subscriptionFactoryContract = new FundSubscription();
+            subscriptionFactoryContract.fundSubscription(
+                networkConfig.vrfCoordinator,
+                networkConfig.subscriptionId,
+                networkConfig.link
+            );
+        }
         vm.startBroadcast();
         Lottery raffle = new Lottery(
             networkConfig.vrfCoordinator,
@@ -21,6 +40,16 @@ contract LotteryDeploy is Script {
             networkConfig.interval
         );
         vm.stopBroadcast();
-        return raffle;
+
+        // Add consumer here because contract is deployed
+        AddConsumer consumerInjector = new AddConsumer();
+        consumerInjector.enrollConsumer(
+            networkConfig.vrfCoordinator,
+            address(raffle),
+            networkConfig.subscriptionId
+        );
+
+        // We also return the config so tests can use the `vrfCoordinator`
+        return (raffle, networkConfig);
     }
 }

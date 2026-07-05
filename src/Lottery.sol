@@ -28,6 +28,7 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     uint256 private sLastTimeStamp;
 
     event LotteryEntered(address indexed participant);
+    event RequestRandomNumberForLottery(uint256 requestId);
 
     /**
      * When we are inheriting from a contract (VRFConsumerBaseV2Plus)
@@ -124,7 +125,8 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 )
             });
         // `s_vrfCoordinator` is an inherited state variable of VRFConsumerBaseV2Plus
-        s_vrfCoordinator.requestRandomWords(payload);
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(payload);
+        emit RequestRandomNumberForLottery(requestId);
     }
 
     function fulfillRandomWords(

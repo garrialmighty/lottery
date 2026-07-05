@@ -2,28 +2,35 @@
 
 pragma solidity 0.8.19;
 
-import {console, Test} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+
 import {Lottery} from "../src/Lottery.sol";
 import {LotteryDeploy} from "../script/Lottery.s.sol";
+import {HelperConfig} from "../script/HelperConfig.s.sol";
 
 contract LotteryTest is Test {
-    Lottery lottery;
-    address DONOR_USER = makeAddr("mockUser");
+    address donorUser = makeAddr("mockUser");
+    Lottery private lottery;
+    address private vrfCoordinator;
+    HelperConfig.NetworkConfig private networkConfig;
 
     // As per tutorial, we have to copy-paste the event form the contract.
     event LotteryEntered(address indexed participant);
 
     modifier lotteryEntered() {
         uint256 entryFee = lottery.getEntryFee();
-        vm.prank(DONOR_USER);
+        vm.prank(donorUser);
         lottery.enterRaffle{value: entryFee}();
         _;
     }
 
     function setUp() external {
         LotteryDeploy deployLottery = new LotteryDeploy();
-        lottery = deployLottery.run();
-        vm.deal(DONOR_USER, 10 ether);
+        (lottery, networkConfig) = deployLottery.run();
+        vm.deal(donorUser, 10 ether);
+        vrfCoordinator = networkConfig.vrfCoordinator;
     }
 
     function test_getEntryFee() external view {
@@ -40,15 +47,15 @@ contract LotteryTest is Test {
         uint256 entryFee = lottery.getEntryFee();
 
         // Always set prank before sending value
-        vm.prank(DONOR_USER);
+        vm.prank(donorUser);
         // We tell Foundry that we are expecting an event
         vm.expectEmit(true, false, false, false, address(lottery));
         // We also tell Foundry this is the type of event we are expecting
-        emit LotteryEntered(DONOR_USER);
+        emit LotteryEntered(donorUser);
         lottery.enterRaffle{value: entryFee}();
 
         address participant = lottery.getParticipantAtIndex(0);
-        assertEq(participant, DONOR_USER);
+        assertEq(participant, donorUser);
     }
 
     function test_upkeepHandling() external lotteryEntered {
@@ -72,5 +79,24 @@ contract LotteryTest is Test {
         );
         vm.expectRevert(expectedError);
         lottery.performUpkeep("");
+    }
+
+    function test_performUpkeep_timeToPickWinner() external lotteryEntered {
+        vm.warp(block.timestamp + 60);
+        vm.roll(block.number + 1);
+
+        // It is important to call `recordLogs`
+        // before calling a function that emits events
+        // Not calling this will result in `getRecordedLogs` returning empty.
+        vm.recordLogs();
+        lottery.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[0].topics[0];
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
+            uint256(1),
+            address(lottery)
+        );
+
+        assertEq(address(lottery).balance, 0);
     }
 }
