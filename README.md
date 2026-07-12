@@ -1,3 +1,12 @@
+## Personal notes
+
+### Verifying
+NOTE: You need to load the `.env` file (i.e. `touch .env`) before running the script below.
+Make sure to run it in `bash` as the syntax of the `.env` file is not compatible in `fish`.
+```shell
+$ forge verify-contract <contract_address> src/Lottery.sol:Lottery --etherscan-api-key $ETHERSCAN_API_KEY --rpc-url $SEPOLIA_RPC_URL
+```
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
