@@ -121,7 +121,7 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 numWords: MAX_WORD_NUMBER,
                 // Setting `nativePayment` to true to pay for VRF requests with Sepolia ETH instead of LINK
                 extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: true})
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
                 )
             });
         // `s_vrfCoordinator` is an inherited state variable of VRFConsumerBaseV2Plus
