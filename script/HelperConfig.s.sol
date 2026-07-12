@@ -29,6 +29,7 @@ contract HelperConfig is Script, Constants {
         uint32 gasLimit;
         uint256 interval;
         address link;
+        address account;
     }
 
     constructor() {
@@ -62,7 +63,8 @@ contract HelperConfig is Script, Constants {
             subscriptionId: 21696582914931907414860541822315855792894493028648821595705788130624572580909,
             gasLimit: 500000,
             interval: 86400, // 1 day (24 hours),
-            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
+            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
+            account: 0xD13Df36b7CF771f0Ea2C1f4b89bF2A00f86BDfaD
         });
         return sepoliaConfig;
     }
@@ -89,7 +91,8 @@ contract HelperConfig is Script, Constants {
             subscriptionId: 0,
             gasLimit: 500000,
             interval: 20, // 20 seconds
-            link: address(mockLinkContract)
+            link: address(mockLinkContract),
+            account: 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38
         });
         return activeNetworkConfig;
     }

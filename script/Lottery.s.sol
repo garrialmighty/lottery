@@ -22,16 +22,18 @@ contract LotteryDeploy is Script {
                 networkConfig.subscriptionId,
                 networkConfig.vrfCoordinator
             ) = subscriptionGenerator.createSubscription(
-                networkConfig.vrfCoordinator
+                networkConfig.vrfCoordinator,
+                networkConfig.account
             );
             FundSubscription subscriptionFactoryContract = new FundSubscription();
             subscriptionFactoryContract.fundSubscription(
                 networkConfig.vrfCoordinator,
                 networkConfig.subscriptionId,
-                networkConfig.link
+                networkConfig.link,
+                networkConfig.account
             );
         }
-        vm.startBroadcast();
+        vm.startBroadcast(networkConfig.account);
         Lottery raffle = new Lottery(
             networkConfig.vrfCoordinator,
             networkConfig.keyHash,
@@ -46,7 +48,8 @@ contract LotteryDeploy is Script {
         consumerInjector.enrollConsumer(
             networkConfig.vrfCoordinator,
             address(raffle),
-            networkConfig.subscriptionId
+            networkConfig.subscriptionId,
+            networkConfig.account
         );
 
         // We also return the config so tests can use the `vrfCoordinator`
